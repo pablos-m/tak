@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konwerter MP4 na MP3</title>
+    <style>
+        /* Podstawowy reset stylów */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Stylizacja ciała strony */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        /* Kontener główny */
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Stylizacja inputa */
+        input[type="file"] {
+            font-size: 16px;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f7f7f7;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        /* Stylizacja przycisku konwertowania */
+        button {
+            background-color: #4CAF50;
+            color: white;
+            font-size: 18px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Link do pobrania */
+        #downloadLink {
+            display: block;
+            margin-top: 20px;
+            color: #007BFF;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        #downloadLink:hover {
+            text-decoration: underline;
+        }
+
+        /* Drobne style responsywne */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            button {
+                font-size: 16px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Konwerter MP4 na MP3</h1>
+        <input type="file" id="fileInput" accept="video/mp4">
+        <button id="convertBtn">Konwertuj na MP3</button>
+        <br>
+        <a id="downloadLink" href="#" style="display:none;">Pobierz MP3</a>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.0/lame.min.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const convertBtn = document.getElementById('convertBtn');
+        const downloadLink = document.getElementById('downloadLink');
+
+        let audioContext;
+        let audioBuffer;
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file && file.type === 'video/mp4') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const videoBlob = e.target.result;
+                    extractAudioFromVideo(videoBlob);
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
+                alert('Proszę wybrać plik MP4.');
+            }
+        });
+
+        function extractAudioFromVideo(videoBlob) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.decodeAudioData(videoBlob, function(buffer) {
+                audioBuffer = buffer;
+                console.log('Audio załadowane i zdekodowane.');
+            }, function(err) {
+                console.error('Błąd podczas dekodowania audio: ', err);
+            });
+        }
+
+        convertBtn.addEventListener('click', () => {
+            if (audioBuffer) {
+                convertToMp3(audioBuffer);
+            } else {
+                alert('Najpierw załaduj plik wideo.');
+            }
+        });
+
+        function convertToMp3(buffer) {
+            const mp3Encoder = new lamejs.Mp3Encoder(1, 44100, 128);
+            const samples = new Int16Array(buffer.length);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                samples[i] = data[i] * 32767.0; // konwersja do 16-bitowych próbek
+            }
+
+            const mp3Data = [];
+            let remaining = samples.length;
+            let offset = 0;
+
+            while (remaining >= 1152) {
+                const chunk = samples.subarray(offset, offset + 1152);
+                const mp3buf = mp3Encoder.encodeBuffer(chunk);
+                mp3Data.push(new Int8Array(mp3buf));
+                offset += 1152;
+                remaining -= 1152;
+            }
+
+            const mp3buf = mp3Encoder.flush();
+            mp3Data.push(new Int8Array(mp3buf));
+
+            const mp3Blob = new Blob(mp3Data, { type: 'audio/mp3' });
+            const mp3Url = URL.createObjectURL(mp3Blob);
+            downloadLink.href = mp3Url;
+            downloadLink.download = 'audio.mp3';
+            downloadLink.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
