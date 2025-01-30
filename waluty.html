@@ -37,10 +37,18 @@
       margin-bottom: 20px;
     }
 
-    .input-group, .output-group {
+    .input-group {
       display: flex;
       align-items: center;
       margin-bottom: 20px;
+      place-self: center;
+    
+    }
+
+    .output-group {
+      display: flex;
+      margin-bottom: 20px;
+      place-self: center;
     }
 
     input[type="number"], select {
@@ -92,19 +100,19 @@
     <div class="converter">
       <div class="input-group">
         <input type="number" id="amount" placeholder="Kwota" />
-        <select id="from-currency">
-          <!-- Waluty do wyboru -->
-        </select>
       </div>
-      <div class="arrow">&#8594;</div>
       <div class="output-group">
-        <input type="number" id="converted-amount" readonly />
+        <select id="from-currency">
+            <!-- Waluty do wyboru -->
+        </select>
+        <div class="arrow">&#8594;</div>
         <select id="to-currency">
           <!-- Waluty do wyboru -->
         </select>
       </div>
       <button id="convert-button">Przelicz</button>
       <p id="error-message" class="error-message"></p>
+      <input type="number" id="converted-amount" readonly />
     </div>
   </div>
 
